@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flayer Maker — Generador de flyers de servicios</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222c; --line:#2a2f3b;
+    --text:#e8eaf0; --muted:#9aa3b2; --accent:#e63946; --accent2:#00b4d8;
+    --input:#12151c; --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  header{padding:22px 28px 12px;border-bottom:1px solid var(--line)}
+  header h1{margin:0;font-size:26px;letter-spacing:.5px}
+  header h1 span{color:var(--accent)}
+  header p{margin:6px 0 0;color:var(--muted);font-size:14px}
+  main{display:grid;grid-template-columns:minmax(320px,460px) 1fr;gap:24px;padding:24px 28px 40px;align-items:start}
+  @media (max-width:900px){main{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+  .card h2{margin:0 0 4px;font-size:16px}
+  .card .hint{margin:0 0 14px;color:var(--muted);font-size:12.5px}
+  label{display:block;font-size:13px;color:var(--muted);margin:12px 0 5px}
+  input[type=text],input[type=url],input[type=number],textarea{
+    width:100%;background:var(--input);border:1px solid var(--line);border-radius:8px;
+    color:var(--text);padding:9px 11px;font-size:14px;font-family:inherit;outline:none}
+  input:focus,textarea:focus{border-color:var(--accent2)}
+  textarea{resize:vertical;min-height:64px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row3{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+  .colorrow{display:flex;align-items:center;gap:10px}
+  input[type=color]{width:44px;height:38px;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--input);cursor:pointer}
+  .hex{font-family:monospace;font-size:13px;color:var(--muted)}
+  button{cursor:pointer;font-family:inherit}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:11px 16px;font-size:14px;font-weight:600}
+  .btn:hover{filter:brightness(1.1)}
+  .btn.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+  .btn.ghost{background:transparent;color:var(--muted);border:1px dashed var(--line)}
+  .btn.small{padding:7px 11px;font-size:13px}
+  .btn.danger{background:transparent;color:#ff6b6b;border:1px solid #5a2a2a}
+  .actions{display:flex;flex-wrap:wrap;gap:10px}
+  .block{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:12px}
+  .block .block-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+  .block .block-head strong{font-size:13px}
+  .thumb{max-width:100%;max-height:120px;border-radius:8px;margin-top:8px;display:none}
+  .preview-wrap{position:sticky;top:16px}
+  .preview-wrap h2{font-size:16px;margin:0 0 10px}
+  .preview-note{color:var(--muted);font-size:12.5px;margin:0 0 12px}
+  #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222831;color:#fff;
+    padding:11px 18px;border-radius:9px;font-size:14px;box-shadow:0 6px 24px rgba(0,0,0,.5);display:none;z-index:50}
+
+  /* ===== Flyer (se reutiliza tal cual en el HTML exportado) ===== */
+  .flyer{--ac:#e63946;background:#fff;color:#1c1e24;border-radius:16px;overflow:hidden;
+    box-shadow:0 12px 40px rgba(0,0,0,.45);max-width:640px;margin:0 auto;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  .flyer-brand{background:var(--ac);color:#fff;text-align:center;padding:26px 24px 20px}
+  .flyer-brand img{max-width:220px;max-height:110px;object-fit:contain;background:#fff;border-radius:10px;padding:6px}
+  .flyer-brand .brand-name{font-size:26px;font-weight:800;letter-spacing:.5px}
+  .flyer-body{padding:26px 28px 30px}
+  .flyer-title{font-size:30px;font-weight:800;margin:0 0 10px;line-height:1.15;color:#14161a}
+  .flyer-intro{font-size:15.5px;line-height:1.55;color:#444a54;margin:0 0 22px;white-space:pre-line}
+  .flyer-star{border:2px solid var(--ac);border-radius:12px;padding:16px 18px;margin-bottom:22px;background:#fff}
+  .flyer-star .tag{display:inline-block;background:var(--ac);color:#fff;font-size:11px;font-weight:700;
+    letter-spacing:1px;text-transform:uppercase;border-radius:20px;padding:4px 10px;margin-bottom:8px}
+  .flyer-star h3{margin:0 0 6px;font-size:21px}
+  .flyer-star p{margin:0;font-size:14.5px;line-height:1.5;color:#444a54;white-space:pre-line}
+  .flyer-star .price{margin-top:10px;font-size:26px;font-weight:800;color:var(--ac)}
+  .flyer-services h4{margin:0 0 10px;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#8a919e}
+  .flyer-service{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid #e8eaee}
+  .flyer-service .s-name{font-weight:700;font-size:15.5px}
+  .flyer-service .s-desc{font-size:13.5px;color:#5b616d;line-height:1.45;white-space:pre-line}
+  .flyer-service .s-price{font-weight:800;font-size:16px;color:var(--ac);white-space:nowrap}
+  .flyer-text{font-size:15px;line-height:1.55;margin:16px 0 0;white-space:pre-line}
+  .flyer-foot{margin-top:26px;padding-top:16px;border-top:1px solid #e8eaee;text-align:center;
+    font-size:13.5px;color:#6b7280;white-space:pre-line}
+  .flyer-empty{color:#9aa3b2;text-align:center;padding:40px 20px;font-size:14px}
+
+  @media print{
+    body{background:#fff}
+    header,main>.editor,.preview-wrap>h2,.preview-wrap>.preview-note,#toast{display:none !important}
+    main{display:block;padding:0}
+    .preview-wrap{position:static}
+    .flyer{box-shadow:none;border-radius:0;max-width:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Flayer <span>Maker</span></h1>
+  <p>Arma tu flyer de servicios en el formulario, míralo en vivo y descarga el HTML final listo para guardar o compartir.</p>
+</header>
+
+<main>
+  <!-- ============ EDITOR ============ -->
+  <section class="editor">
+    <div class="card">
+      <h2>1. Marca</h2>
+      <p class="hint">Nombre o imagen de marca. Si subes una imagen, esa se muestra en el flyer; si no, se muestra el nombre.</p>
+      <label for="brandName">Nombre de marca</label>
+      <input type="text" id="brandName" placeholder="Ej. La Pape" value="La Pape">
+      <label for="brandImgFile">Imagen de marca (logo)</label>
+      <input type="file" id="brandImgFile" accept="image/*">
+      <label for="brandImgUrl">O pega la URL de la imagen</label>
+      <input type="url" id="brandImgUrl" placeholder="https://…/logo.png">
+      <img id="brandThumb" class="thumb" alt="Vista previa del logo">
+      <div style="margin-top:8px"><button class="btn ghost small" id="clearImg" type="button">Quitar imagen</button></div>
+      <label for="accentColor">Color principal del flyer</label>
+      <div class="colorrow">
+        <input type="color" id="accentColor" value="#e63946">
+        <span class="hex" id="accentHex">#e63946</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. Título e introducción</h2>
+      <label for="flyerTitle">Título</label>
+      <input type="text" id="flyerTitle" placeholder="Ej. Trámites rápidos y sin filas" value="Trámites rápidos y sin filas">
+      <label for="intro">Introducción</label>
+      <textarea id="intro" placeholder="Un párrafo corto que presente tus servicios…">Te ayudamos con tus trámites oficiales de forma rápida, segura y sin que pierdas el día en filas.</textarea>
+    </div>
+
+    <div class="card">
+      <h2>3. Producto o servicio estrella ⭐</h2>
+      <p class="hint">El servicio destacado del flyer, con su costo.</p>
+      <label for="starName">Nombre</label>
+      <input type="text" id="starName" placeholder="Ej. Acta de nacimiento certificada" value="Acta de nacimiento certificada">
+      <label for="starDesc">Descripción</label>
+      <textarea id="starDesc" placeholder="Qué incluye…">Copia certificada lista para usar en cualquier trámite oficial.</textarea>
+      <label for="starPrice">Costo</label>
+      <input type="text" id="starPrice" placeholder="Ej. $170" value="$170">
+    </div>
+
+    <div class="card">
+      <h2>4. Servicios o productos</h2>
+      <p class="hint">Agrega todos los bloques que necesites, cada uno con su costo.</p>
+      <div id="servicesList"></div>
+      <button class="btn secondary" id="addService" type="button" style="margin-top:12px">＋ Agregar servicio o producto</button>
+    </div>
+
+    <div class="card">
+      <h2>5. Bloques de texto</h2>
+      <p class="hint">Textos libres con el color que elijas (avisos, promociones, horarios…).</p>
+      <div id="textsList"></div>
+      <button class="btn secondary" id="addText" type="button" style="margin-top:12px">＋ Agregar bloque de texto</button>
+    </div>
+
+    <div class="card">
+      <h2>6. Pie / contacto <span style="color:var(--muted);font-weight:400">(opcional)</span></h2>
+      <label for="footer">Texto de pie</label>
+      <textarea id="footer" placeholder="Ej. WhatsApp 222 000 0000 · Av. 6 Poniente 4713, Puebla">WhatsApp +52 1 56 2477 9442 · Av. 6 Poniente 4713, Puebla</textarea>
+    </div>
+
+    <div class="card">
+      <h2>Guardar tu flyer</h2>
+      <p class="hint">El HTML exportado es un archivo único e independiente: incluye el diseño y la imagen de marca, listo para guardar o compartir.</p>
+      <div class="actions">
+        <button class="btn" id="downloadHtml" type="button">⬇ Descargar HTML</button>
+        <button class="btn secondary" id="copyHtml" type="button">⧉ Copiar HTML</button>
+        <button class="btn secondary" id="printBtn" type="button">🖨 Imprimir / PDF</button>
+        <button class="btn danger" id="clearAll" type="button">Limpiar todo</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VISTA PREVIA ============ -->
+  <section class="preview-wrap">
+    <h2>Vista previa en vivo</h2>
+    <p class="preview-note">Todo lo que escribas en el formulario se refleja aquí al instante.</p>
+    <div id="preview"></div>
+  </section>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const LS_KEY = 'flayer-maker-v1';
+let brandImgData = ''; // data URL de la imagen subida (tiene prioridad sobre la URL)
+
+/* ---------- utilidades ---------- */
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 2600);
+}
+function brandImgSrc(){
+  return brandImgData || $('brandImgUrl').value.trim();
+}
+
+/* ---------- bloques dinámicos ---------- */
+function serviceBlockHTML(name='', desc='', price=''){
+  const d = document.createElement('div');
+  d.className = 'block service-block';
+  d.innerHTML =
+    '<div class="block-head"><strong>Servicio / producto</strong>' +
+    '<button type="button" class="btn danger small del-block">Eliminar</button></div>' +
+    '<label>Nombre</label><input type="text" class="svc-name" placeholder="Ej. RFC con homoclave" value="' + esc(name) + '">' +
+    '<label>Descripción</label><textarea class="svc-desc" placeholder="Qué incluye…">' + esc(desc) + '</textarea>' +
+    '<label>Costo</label><input type="text" class="svc-price" placeholder="Ej. $11" value="' + esc(price) + '">';
+  d.querySelector('.del-block').addEventListener('click', () => { d.remove(); render(); });
+  return d;
+}
+function textBlockHTML(text='', color='#1c1e24'){
+  const d = document.createElement('div');
+  d.className = 'block text-block';
+  d.innerHTML =
+    '<div class="block-head"><strong>Bloque de texto</strong>' +
+    '<button type="button" class="btn danger small del-block">Eliminar</button></div>' +
+    '<label>Texto</label><textarea class="txt-content" placeholder="Escribe tu texto…">' + esc(text) + '</textarea>' +
+    '<label>Color del texto</label>' +
+    '<div class="colorrow"><input type="color" class="txt-color" value="' + esc(color) + '">' +
+    '<span class="hex txt-hex">' + esc(color) + '</span></div>';
+  d.querySelector('.del-block').addEventListener('click', () => { d.remove(); render(); });
+  d.querySelector('.txt-color').addEventListener('input', e => {
+    d.querySelector('.txt-hex').textContent = e.target.value;
+  });
+  return d;
+}
+function addService(name='', desc='', price=''){
+  $('servicesList').appendChild(serviceBlockHTML(name, desc, price));
+  render();
+}
+function addTextBlock(text='', color='#1c1e24'){
+  $('textsList').appendChild(textBlockHTML(text, color));
+  render();
+}
+$('addService').addEventListener('click', () => addService());
+$('addText').addEventListener('click', () => addTextBlock());
+
+/* ---------- imagen de marca ---------- */
+$('brandImgFile').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = () => { brandImgData = r.result; updateThumb(); render(); };
+  r.readAsDataURL(f);
+});
+$('clearImg').addEventListener('click', () => {
+  brandImgData = ''; $('brandImgFile').value = ''; $('brandImgUrl').value = '';
+  updateThumb(); render();
+});
+function updateThumb(){
+  const src = brandImgSrc();
+  const th = $('brandThumb');
+  if(src){ th.src = src; th.style.display = 'block'; }
+  else { th.removeAttribute('src'); th.style.display = 'none'; }
+}
+
+/* ---------- estado / render ---------- */
+function collect(){
+  const services = [...document.querySelectorAll('.service-block')].map(b => ({
+    name: b.querySelector('.svc-name').value.trim(),
+    desc: b.querySelector('.svc-desc').value.trim(),
+    price: b.querySelector('.svc-price').value.trim()
+  }));
+  const texts = [...document.querySelectorAll('.text-block')].map(b => ({
+    text: b.querySelector('.txt-content').value.trim(),
+    color: b.querySelector('.txt-color').value
+  }));
+  return {
+    brandName: $('brandName').value.trim(),
+    brandImgUrl: $('brandImgUrl').value.trim(),
+    brandImgData,
+    accent: $('accentColor').value,
+    title: $('flyerTitle').value.trim(),
+    intro: $('intro').value.trim(),
+    star: {
+      name: $('starName').value.trim(),
+      desc: $('starDesc').value.trim(),
+      price: $('starPrice').value.trim()
+    },
+    services, texts,
+    footer: $('footer').value.trim()
+  };
+}
+
+function flyerHTML(s){
+  const img = s.brandImgData || s.brandImgUrl;
+  const brand = img
+    ? '<img src="' + esc(img) + '" alt="' + esc(s.brandName || 'Marca') + '">'
+    : (s.brandName ? '<div class="brand-name">' + esc(s.brandName) + '</div>' : '');
+  const star = (s.star.name || s.star.desc || s.star.price)
+    ? '<div class="flyer-star"><span class="tag">Servicio estrella</span>' +
+      (s.star.name ? '<h3>' + esc(s.star.name) + '</h3>' : '') +
+      (s.star.desc ? '<p>' + esc(s.star.desc) + '</p>' : '') +
+      (s.star.price ? '<div class="price">' + esc(s.star.price) + '</div>' : '') +
+      '</div>' : '';
+  const svcRows = s.services.filter(x => x.name || x.desc || x.price).map(x =>
+    '<div class="flyer-service"><div>' +
+    (x.name ? '<div class="s-name">' + esc(x.name) + '</div>' : '') +
+    (x.desc ? '<div class="s-desc">' + esc(x.desc) + '</div>' : '') +
+    '</div>' + (x.price ? '<div class="s-price">' + esc(x.price) + '</div>' : '') + '</div>'
+  ).join('');
+  const services = svcRows
+    ? '<div class="flyer-services"><h4>Servicios y productos</h4>' + svcRows + '</div>' : '';
+  const texts = s.texts.filter(x => x.text).map(x =>
+    '<p class="flyer-text" style="color:' + esc(x.color) + '">' + esc(x.text) + '</p>'
+  ).join('');
+  const foot = s.footer ? '<div class="flyer-foot">' + esc(s.footer) + '</div>' : '';
+  const body = (s.title || s.intro || star || services || texts || foot)
+    ? (s.title ? '<h2 class="flyer-title">' + esc(s.title) + '</h2>' : '') +
+      (s.intro ? '<p class="flyer-intro">' + esc(s.intro) + '</p>' : '') +
+      star + services + texts + foot
+    : '<div class="flyer-empty">Tu flyer aparecerá aquí conforme llenes el formulario.</div>';
+  return '<div class="flyer" style="--ac:' + esc(s.accent) + '">' +
+    '<div class="flyer-brand">' + brand + '</div>' +
+    '<div class="flyer-body">' + body + '</div></div>';
+}
+
+function render(){
+  const s = collect();
+  $('accentHex').textContent = s.accent;
+  $('preview').innerHTML = flyerHTML(s);
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(s)); }catch(e){}
+}
+document.querySelector('main').addEventListener('input', render);
+
+/* ---------- exportar HTML final ---------- */
+function flyerCSS(){
+  // CSS del flyer, extraído de la hoja de esta página para el archivo exportado.
+  const rules = [];
+  for(const sheet of document.styleSheets){
+    try{
+      for(const r of sheet.cssRules){
+        if(r.selectorText && r.selectorText.startsWith('.flyer')) rules.push(r.cssText);
+      }
+    }catch(e){}
+  }
+  return rules.join('\n');
+}
+function standaloneHTML(){
+  const s = collect();
+  const title = s.title || s.brandName || 'Flyer';
+  return '<!DOCTYPE html>\n<html lang="es">\n<head>\n<meta charset="UTF-8">\n' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+    '<title>' + esc(title) + '</title>\n<style>\n' +
+    'body{margin:0;padding:24px;background:#eef0f3;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}\n' +
+    '.flyer{margin:0 auto}\n' + flyerCSS() + '\n</style>\n</head>\n<body>\n' +
+    flyerHTML(s) + '\n</body>\n</html>';
+}
+function fileName(){
+  const s = collect();
+  const base = (s.title || s.brandName || 'flyer').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'flyer';
+  return base + '.html';
+}
+$('downloadHtml').addEventListener('click', () => {
+  const blob = new Blob([standaloneHTML()], {type: 'text/html;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName();
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast('Flyer descargado como ' + a.download);
+});
+$('copyHtml').addEventListener('click', async () => {
+  try{
+    await navigator.clipboard.writeText(standaloneHTML());
+    toast('HTML copiado al portapapeles');
+  }catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = standaloneHTML(); document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); ta.remove();
+    toast('HTML copiado al portapapeles');
+  }
+});
+$('printBtn').addEventListener('click', () => window.print());
+$('clearAll').addEventListener('click', () => {
+  if(!confirm('¿Borrar todo el contenido del flyer y empezar de cero?')) return;
+  localStorage.removeItem(LS_KEY);
+  $('brandName').value = ''; $('brandImgUrl').value = ''; $('brandImgFile').value = '';
+  brandImgData = ''; updateThumb();
+  $('accentColor').value = '#e63946';
+  $('flyerTitle').value = ''; $('intro').value = '';
+  $('starName').value = ''; $('starDesc').value = ''; $('starPrice').value = '';
+  $('servicesList').innerHTML = ''; $('textsList').innerHTML = '';
+  $('footer').value = '';
+  addService(); addTextBlock();
+  render(); toast('Flyer limpio, listo para empezar');
+});
+
+/* ---------- restaurar borrador / ejemplos iniciales ---------- */
+(function init(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); }catch(e){}
+  if(saved){
+    $('brandName').value = saved.brandName || '';
+    $('brandImgUrl').value = saved.brandImgUrl || '';
+    brandImgData = saved.brandImgData || '';
+    $('accentColor').value = saved.accent || '#e63946';
+    $('flyerTitle').value = saved.title || '';
+    $('intro').value = saved.intro || '';
+    $('starName').value = (saved.star && saved.star.name) || '';
+    $('starDesc').value = (saved.star && saved.star.desc) || '';
+    $('starPrice').value = (saved.star && saved.star.price) || '';
+    $('footer').value = saved.footer || '';
+    (saved.services && saved.services.length ? saved.services : [{}]).forEach(x =>
+      $('servicesList').appendChild(serviceBlockHTML(x.name, x.desc, x.price)));
+    (saved.texts && saved.texts.length ? saved.texts : []).forEach(x =>
+      $('textsList').appendChild(textBlockHTML(x.text, x.color)));
+  }else{
+    // Ejemplos iniciales para que se vea el formato de inmediato.
+    $('servicesList').appendChild(serviceBlockHTML('RFC con homoclave', 'Trámite ante el SAT con tu CURP.', '$11'));
+    $('servicesList').appendChild(serviceBlockHTML('Antecedentes no penales', 'Constancia federal vigente.', '$315'));
+    $('textsList').appendChild(textBlockHTML('¡Promoción de apertura! Menciona este flyer y llévate un descuento en tu primer trámite.', '#e63946'));
+  }
+  updateThumb();
+  render();
+})();
+</script>
+</body>
+</html>
